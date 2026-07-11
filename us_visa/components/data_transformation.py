@@ -14,18 +14,15 @@ from us_visa.exception import USvisaException
 from us_visa.logger import logging
 from us_visa.utils.main_utils import save_object, save_numpy_array_data, read_yaml_file, drop_columns
 
-from dataclasses import dataclass
 
-@dataclass
-class TargetValueMapping:
-    Certified: int = 0
-    Denied: int = 1
-target_feature_train_df = target_feature_train_df.replace(
-    TargetValueMapping().__dict__
-)
-target_feature_test_df = target_feature_test_df.replace(
-    TargetValueMapping().__dict__
-)
+
+mapping = {
+    "Certified": 0,
+    "Denied": 1
+}
+
+
+target_feature_test_df = target_feature_test_df.map(mapping)
 
 class DataTransformation:
     def __init__(self, data_ingestion_artifact: DataIngestionArtifact,
@@ -118,9 +115,7 @@ class DataTransformation:
 
                 input_feature_train_df = drop_columns(df=input_feature_train_df, cols = drop_cols)
                 
-                target_feature_train_df = target_feature_train_df.replace(
-                    TargetValueMapping().__dict__()
-                )
+                target_feature_train_df = target_feature_train_df.map(mapping)
 
 
                 input_feature_test_df = test_df.drop(columns=[TARGET_COLUMN], axis=1)
@@ -136,9 +131,7 @@ class DataTransformation:
 
                 logging.info("drop the columns in drop_cols of Test dataset")
 
-                target_feature_test_df = target_feature_test_df.replace(
-                    TargetValueMapping().__dict__()
-                )
+                target_feature_test_df = target_feature_test_df.map(mapping)
 
                 logging.info("Got train features and test features of Testing dataset")
 

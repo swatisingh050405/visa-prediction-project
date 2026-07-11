@@ -1,14 +1,14 @@
 import os
 import sys
-
 from pandas import DataFrame
 from sklearn.model_selection import train_test_split
-
 from us_visa.entity.config_entity import DataIngestionConfig
 from us_visa.entity.artifact_entity import DataIngestionArtifact
 from us_visa.exception import USvisaException
 from us_visa.logger import logging
 from us_visa.data_access.visa_data import USvisaData
+from us_visa.constants import *
+
 
 
 
@@ -25,13 +25,7 @@ class DataIngestion:
 
     
     def export_data_into_feature_store(self)->DataFrame:
-        """
-        Method Name :   export_data_into_feature_store
-        Description :   This method exports data from mongodb to csv file
-        
-        Output      :   data is returned as artifact of data ingestion components
-        On Failure  :   Write an exception log and then raise an exception
-        """
+      
         try:
             logging.info(f"Exporting data from mongodb")
             usvisa_data = USvisaData()
@@ -50,17 +44,15 @@ class DataIngestion:
         
 
     def split_data_as_train_test(self,dataframe: DataFrame) ->None:
-        """
-        Method Name :   split_data_as_train_test
-        Description :   This method splits the dataframe into train set and test set based on split ratio 
         
-        Output      :   Folder is created in s3 bucket
-        On Failure  :   Write an exception log and then raise an exception
-        """
         logging.info("Entered split_data_as_train_test method of Data_Ingestion class")
 
         try:
-            train_set, test_set = train_test_split(dataframe, test_size=self.data_ingestion_config.train_test_split_ratio)
+            train_set, test_set = train_test_split(
+            dataframe,
+            test_size=self.data_ingestion_config.train_test_split_ratio,
+            random_state=self.data_ingestion_config.random_state,
+            stratify=dataframe["case_status"])
             logging.info("Performed train test split on the dataframe")
             logging.info(
                 "Exited split_data_as_train_test method of Data_Ingestion class"
@@ -103,7 +95,7 @@ class DataIngestion:
             )
 
             data_ingestion_artifact = DataIngestionArtifact(trained_file_path=self.data_ingestion_config.training_file_path,
-            test_file_path=self.data_ingestion_config.testing_file_path)
+            test_file_path=self.data_ingestion_config.testing_file_path , feature_store_file_path=self.data_ingestion_config.feature_store_file_path)
             
             logging.info(f"Data ingestion artifact: {data_ingestion_artifact}")
             return data_ingestion_artifact

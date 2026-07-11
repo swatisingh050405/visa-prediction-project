@@ -83,10 +83,14 @@ class DataValidation:
             train_df = self.read_data(
                 self.data_ingestion_artifact.trained_file_path
             )
+            if train_df.empty:
+                validation_error_msg += "Training dataframe is empty. "
 
             test_df = self.read_data(
                 self.data_ingestion_artifact.test_file_path
             )
+            if test_df.empty:
+                validation_error_msg += "Testing dataframe is empty. "
 
             # Validate number of columns
             if not self.validate_number_of_columns(train_df):
@@ -112,7 +116,10 @@ class DataValidation:
             data_validation_artifact = DataValidationArtifact(
                 validation_status=validation_status,
                 message=validation_error_msg,
-                drift_report_file_path=None,
+            )
+
+            logging.info(
+                f"Data validation artifact: {data_validation_artifact}"
             )
 
             return data_validation_artifact
