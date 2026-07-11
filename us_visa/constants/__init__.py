@@ -33,15 +33,26 @@ DATA_INGESTION_DIR_NAME: str = "data_ingestion"
 DATA_INGESTION_FEATURE_STORE_DIR: str = "feature_store"
 DATA_INGESTION_INGESTED_DIR: str = "ingested"
 DATA_INGESTION_TRAIN_TEST_SPLIT_RATIO: float = 0.2
+DATA_INGESTION_RANDOM_STATE = 42
 
 
 """
 Data Validation realted contant start with DATA_VALIDATION VAR NAME
 """
 DATA_VALIDATION_DIR_NAME = "data_validation"
-DATA_VALIDATION_REPORT_FILE_NAME = "validation_report.yaml"
 
 
+"""
+Data Drift Constants
+"""
+
+DATA_DRIFT_DIR_NAME = "data_drift"
+
+DATA_DRIFT_REPORT_DIR = "report"
+
+DATA_DRIFT_REPORT_FILE_NAME = "drift_report.html"
+
+DATA_DRIFT_REPORT_JSON_FILE_NAME = "drift_report.json"
 
 
 """
@@ -50,3 +61,16 @@ Data Transformation ralated constant start with DATA_TRANSFORMATION VAR NAME
 DATA_TRANSFORMATION_DIR_NAME: str = "data_transformation"
 DATA_TRANSFORMATION_TRANSFORMED_DATA_DIR: str = "transformed"
 DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR: str = "transformed_object"
+
+'''
+Model Trainer related constant start with MODEL_TRAINER VAR NAME'''
+
+MODEL_TRAINER_DIR_NAME = "model_trainer"
+
+MODEL_TRAINER_TRAINED_MODEL_DIR = "trained_model"
+
+MODEL_FILE_NAME = "model.pkl"
+
+MODEL_TRAINER_EXPECTED_SCORE = 0.6
+
+MODEL_TRAINER_OVER_FITTING_UNDER_FITTING_THRESHOLD = 0.05

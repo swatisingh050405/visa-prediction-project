@@ -3,17 +3,20 @@ from us_visa.exception import USvisaException
 from us_visa.logger import logging
 from us_visa.components.data_ingestion import DataIngestion
 from us_visa.components.data_validation import DataValidation
+from us_visa.components.data_drift import DataDrift
 from us_visa.components.data_transformation import DataTransformation
 
 
 
 from us_visa.entity.config_entity import (DataIngestionConfig,
                                          DataValidationConfig,
+                                         DataDriftConfig,
                                          DataTransformationConfig,
                                          )
 
 from us_visa.entity.artifact_entity import (DataIngestionArtifact,
                                             DataValidationArtifact,
+                                            DataDriftArtifact,
                                             DataTransformationArtifact,
                                             )
 
@@ -22,6 +25,7 @@ class TrainPipeline:
     def __init__(self):
         self.data_ingestion_config = DataIngestionConfig()
         self.data_validation_config = DataValidationConfig()
+        self.data_drift_config = DataDriftConfig()
         self.data_transformation_config = DataTransformationConfig()
         
 
@@ -69,7 +73,23 @@ class TrainPipeline:
         except Exception as e:
             raise USvisaException(e, sys) from e
         
+    def start_data_drift(
+    self,
+    data_ingestion_artifact: DataIngestionArtifact
+) -> DataDriftArtifact:
 
+        try:
+            data_drift = DataDrift(
+                data_ingestion_artifact=data_ingestion_artifact,
+                data_drift_config=self.data_drift_config
+            )
+
+            data_drift_artifact = data_drift.initiate_data_drift()
+
+            return data_drift_artifact
+
+        except Exception as e:
+            raise USvisaException(e, sys)
 
     def start_data_transformation(self, data_ingestion_artifact: DataIngestionArtifact, data_validation_artifact: DataValidationArtifact) -> DataTransformationArtifact:
         """
@@ -81,5 +101,36 @@ class TrainPipeline:
                                                      data_validation_artifact=data_validation_artifact)
             data_transformation_artifact = data_transformation.initiate_data_transformation()
             return data_transformation_artifact
+        except Exception as e:
+            raise USvisaException(e, sys)
+
+    def run_pipeline(self):
+        try:
+            logging.info("Pipeline Started")
+
+            # Data Ingestion
+            data_ingestion_artifact = self.start_data_ingestion()
+            logging.info("Data ingestion completed successfully")
+
+            # Data Validation
+            data_validation_artifact = self.start_data_validation(
+                data_ingestion_artifact=data_ingestion_artifact
+            )
+            logging.info("Data validation completed successfully")
+
+            # Data Drift
+            data_drift_artifact = self.start_data_drift(
+                data_ingestion_artifact=data_ingestion_artifact
+            )
+            logging.info("Data drift completed successfully")
+
+            # Data Transformation
+            data_transformation_artifact = self.start_data_transformation(
+                data_ingestion_artifact=data_ingestion_artifact,
+                data_validation_artifact=data_validation_artifact
+            )
+
+            logging.info("Pipeline Completed Successfully")
+
         except Exception as e:
             raise USvisaException(e, sys)

@@ -1,3 +1,5 @@
+
+from us_visa.logger import logging
 from us_visa.configuration.mongodb_connection import MongoDBClient
 from us_visa.constants import DATABASE_NAME
 from us_visa.exception import USvisaException
@@ -33,10 +35,16 @@ class USvisaData:
             else:
                 collection = self.mongo_client[database_name][collection_name]
 
+            logging.info(f"Reading collection : {collection_name}")
+
             df = pd.DataFrame(list(collection.find()))
             if "_id" in df.columns.to_list():
                 df = df.drop(columns=["_id"], axis=1)
-            df.replace({"na":np.nan},inplace=True)
+            df.replace(
+                ["na", "NA", "N/A", "null", "Null", "?"],
+                np.nan,
+                inplace=True
+            )
             return df
         except Exception as e:
             raise USvisaException(e,sys)

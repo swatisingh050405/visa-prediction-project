@@ -5,6 +5,7 @@ import numpy as np
 import dill
 import yaml
 from pandas import DataFrame
+from sklearn.metrics import accuracy_score
 
 from us_visa.exception import USvisaException
 from us_visa.logger import logging
@@ -115,3 +116,4 @@ def drop_columns(df: DataFrame, cols: list)-> DataFrame:
         return df
     except Exception as e:
         raise USvisaException(e, sys) from e
+
