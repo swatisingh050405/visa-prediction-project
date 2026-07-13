@@ -67,7 +67,7 @@ class DataTransformationConfig:
                                                    TEST_FILE_NAME.replace("csv", "npy"))
     transformed_object_file_path: str = os.path.join(data_transformation_dir,
                                                      DATA_TRANSFORMATION_TRANSFORMED_OBJECT_DIR,
-                                                     PREPROCSSING_OBJECT_FILE_NAME)
+                                                     PREPROCESSING_OBJECT_FILE_NAME)
 
 
 
@@ -81,11 +81,42 @@ class ModelTrainerConfig:
     trained_model_file_path: str = os.path.join(
         model_trainer_dir,
         MODEL_TRAINER_TRAINED_MODEL_DIR,
-        MODEL_FILE_NAME
+        TRAINED_MODEL_FILE_NAME
     )
 
     expected_accuracy: float = MODEL_TRAINER_EXPECTED_SCORE
 
     overfitting_underfitting_threshold: float = (
         MODEL_TRAINER_OVER_FITTING_UNDER_FITTING_THRESHOLD
+    )
+
+@dataclass
+class ModelEvaluationConfig:
+
+    model_evaluation_dir: str = os.path.join(
+        training_pipeline_config.artifact_dir,
+        MODEL_EVALUATION_DIR_NAME
+    )
+    production_model_file_path: str = os.path.join(
+        SAVED_MODEL_DIR,
+        PRODUCTION_MODEL_FILE_NAME
+    )
+
+    changed_threshold_score: float = MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE
+
+
+
+@dataclass
+class ModelPusherConfig:
+
+    model_pusher_dir: str = os.path.join(
+        training_pipeline_config.artifact_dir,
+        MODEL_PUSHER_DIR_NAME
+    )
+
+    
+
+    production_model_file_path: str = os.path.join(
+        SAVED_MODEL_DIR,
+        PRODUCTION_MODEL_FILE_NAME
     )

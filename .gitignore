@@ -221,3 +221,9 @@ __marimo__/
 notebooks/
 
 artifact/
+
+saved_models/
+
+
+mlruns/
+mlflow.db

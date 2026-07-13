@@ -29,14 +29,26 @@ class DataTransformationArtifact:
     transformed_test_file_path:str
 
 
+
+@dataclass
+class ClassificationMetricArtifact:
+    accuracy_score: float
+    f1_score: float
+    precision_score: float
+    recall_score: float
+
 @dataclass
 class ModelTrainerArtifact:
     trained_model_file_path: str
     train_metric_artifact: ClassificationMetricArtifact
     test_metric_artifact: ClassificationMetricArtifact
 
+
 @dataclass
-class ClassificationMetricArtifact:
-    f1_score: float
-    precision_score: float
-    recall_score: float
+class ModelEvaluationArtifact:
+    is_model_accepted: bool
+    improved_accuracy: float
+
+@dataclass
+class ModelPusherArtifact:
+    saved_model_path: str

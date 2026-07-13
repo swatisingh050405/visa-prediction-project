@@ -18,11 +18,12 @@ TRAIN_FILE_NAME: str = "train.csv"
 TEST_FILE_NAME: str = "test.csv"
 
 FILE_NAME: str = "usvisa.csv"
-MODEL_FILE_NAME = "model.pkl"
+TRAINED_MODEL_FILE_NAME = "trained_model.pkl"
+PRODUCTION_MODEL_FILE_NAME = "production_model.pkl"
 
 TARGET_COLUMN = "case_status"
 CURRENT_YEAR = date.today().year
-PREPROCSSING_OBJECT_FILE_NAME = "preprocessing.pkl"
+PREPROCESSING_OBJECT_FILE_NAME = "preprocessing.pkl"
 SCHEMA_FILE_PATH = os.path.join("config", "schema.yaml")
 
 """
@@ -69,8 +70,21 @@ MODEL_TRAINER_DIR_NAME = "model_trainer"
 
 MODEL_TRAINER_TRAINED_MODEL_DIR = "trained_model"
 
-MODEL_FILE_NAME = "model.pkl"
-
 MODEL_TRAINER_EXPECTED_SCORE = 0.6
 
 MODEL_TRAINER_OVER_FITTING_UNDER_FITTING_THRESHOLD = 0.05
+
+'''
+Model Evaluation related constant start with MODEL_EVALUATION VAR NAME'''
+
+MODEL_EVALUATION_DIR_NAME = "model_evaluation"
+
+MODEL_EVALUATION_CHANGED_THRESHOLD_SCORE = 0.02
+
+'''
+Model Pusher related constant start with MODEL_PUSHER VAR NAME
+'''
+
+MODEL_PUSHER_DIR_NAME = "model_pusher"
+
+SAVED_MODEL_DIR = "saved_models"

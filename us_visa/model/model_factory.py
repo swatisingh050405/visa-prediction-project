@@ -29,7 +29,9 @@ def get_models_and_params():
         ),
 
         "CatBoost": CatBoostClassifier(
-            verbose=False
+            verbose=False,
+             
+            allow_writing_files=False
         )
 
     }
