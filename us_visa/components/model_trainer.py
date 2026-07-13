@@ -1,20 +1,25 @@
 import sys
 import numpy as np
+import mlflow
+import mlflow.sklearn
 from sklearn.model_selection import RandomizedSearchCV
-from sklearn.metrics import accuracy_score
-
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score
+)
 from us_visa.model.model_factory import get_models_and_params
-
 from us_visa.exception import USvisaException
 from us_visa.logger import logging
-
 from us_visa.entity.config_entity import ModelTrainerConfig
 from us_visa.entity.artifact_entity import (
     DataTransformationArtifact,
-    ModelTrainerArtifact
+    ModelTrainerArtifact,
+    ClassificationMetricArtifact
 )
+from us_visa.utils.main_utils import ( load_numpy_array_data, save_object )
 
-from us_visa.utils.main_utils import load_numpy_array_data, save_object , evaluate_models
 
 
 class ModelTrainer:
@@ -52,6 +57,9 @@ class ModelTrainer:
             models, params = get_models_and_params()
 
             logging.info("Got models and params")
+            logging.info("Setting MLflow experiment")
+
+            mlflow.set_experiment("US Visa Prediction")
             logging.info("Initiating model trainer")
 
             best_model = None
@@ -60,45 +68,93 @@ class ModelTrainer:
 
             for model_name, model in models.items():
 
-                logging.info(f"Training {model_name}")
+                with mlflow.start_run(run_name=model_name):
 
-                random_search = RandomizedSearchCV(
+                    logging.info(f"Training {model_name}")
 
-                    estimator=model,
+                    random_search = RandomizedSearchCV(
 
-                    param_distributions=params[model_name],
+                        estimator=model,
 
-                    n_iter=5,
+                        param_distributions=params[model_name],
 
-                    cv=3,
+                        n_iter=5,
 
-                    scoring="accuracy",
+                        cv=3,
 
-                    random_state=42,
+                        scoring="accuracy",
 
-                    n_jobs=-1
+                        random_state=42,
 
+                        n_jobs=-1
+
+                    )
+
+                    random_search.fit(x_train, y_train)
+
+                    tuned_model = random_search.best_estimator_
+
+                    mlflow.log_params(random_search.best_params_)
+                    mlflow.log_param("model_name", model_name)
+
+                    y_pred = tuned_model.predict(x_test)
+
+                    
+
+                    accuracy = accuracy_score(y_test, y_pred)
+                    precision = precision_score(y_test, y_pred)
+                    recall = recall_score(y_test, y_pred)
+                    f1 = f1_score(y_test, y_pred)
+
+                    mlflow.log_metric("accuracy", accuracy)
+                    mlflow.log_metric("precision", precision)
+                    mlflow.log_metric("recall", recall)
+                    mlflow.log_metric("f1_score", f1)
+
+                    mlflow.sklearn.log_model(
+                    sk_model=tuned_model,
+                    artifact_path="model"
                 )
 
-                random_search.fit(x_train, y_train)
+                    logging.info(
+                        f"{model_name} Accuracy : {accuracy}"
+                    )
 
-                tuned_model = random_search.best_estimator_
+                    if accuracy > best_model_score:
 
-                y_pred = tuned_model.predict(x_test)
+                        best_model_score = accuracy
 
-                test_score = accuracy_score(y_test, y_pred)
+                        best_model = tuned_model
 
-                logging.info(
-                    f"{model_name} Accuracy : {test_score}"
-                )
+                        best_model_name = model_name
 
-                if test_score > best_model_score:
+            train_pred = best_model.predict(x_train)
 
-                    best_model_score = test_score
+            mlflow.log_metric(
+            "train_accuracy",
+            accuracy_score(y_train, train_pred)
+        )
 
-                    best_model = tuned_model
+            train_metric_artifact = ClassificationMetricArtifact(
+                 accuracy_score=accuracy_score(y_train, train_pred),
+                f1_score=f1_score(y_train, train_pred),
+                precision_score=precision_score(y_train, train_pred),
+                recall_score=recall_score(y_train, train_pred)
+            )
 
-                    best_model_name = model_name
+            test_pred = best_model.predict(x_test)
+
+            test_metric_artifact = ClassificationMetricArtifact(
+                accuracy_score=accuracy_score(y_test, test_pred),
+                f1_score=f1_score(y_test, test_pred),
+                precision_score=precision_score(y_test, test_pred),
+                recall_score=recall_score(y_test, test_pred)
+            )
+
+            if best_model_score < self.model_trainer_config.expected_accuracy:
+                 raise Exception(
+                        f"No best model found with accuracy greater than {self.model_trainer_config.expected_accuracy}"
+                    )
 
             logging.info(
                 f"Best model found {best_model_name} with accuracy {best_model_score}"
@@ -110,8 +166,9 @@ class ModelTrainer:
             )
 
             model_trainer_artifact = ModelTrainerArtifact(
-                trained_model_file_path=self.model_trainer_config.trained_model_file_path
-            )
+                trained_model_file_path=self.model_trainer_config.trained_model_file_path,train_metric_artifact=train_metric_artifact,
+                test_metric_artifact=test_metric_artifact
+                        )
 
             return model_trainer_artifact
 

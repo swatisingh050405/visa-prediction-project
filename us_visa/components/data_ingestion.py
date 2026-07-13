@@ -10,8 +10,6 @@ from us_visa.data_access.visa_data import USvisaData
 from us_visa.constants import *
 
 
-
-
 class DataIngestion:
     def __init__(self,data_ingestion_config:DataIngestionConfig=DataIngestionConfig()):
         """
@@ -72,13 +70,7 @@ class DataIngestion:
 
     
     def initiate_data_ingestion(self) ->DataIngestionArtifact:
-        """
-        Method Name :   initiate_data_ingestion
-        Description :   This method initiates the data ingestion components of training pipeline 
-        
-        Output      :   train set and test set are returned as the artifacts of data ingestion components
-        On Failure  :   Write an exception log and then raise an exception
-        """
+       
         logging.info("Entered initiate_data_ingestion method of Data_Ingestion class")
 
         try:

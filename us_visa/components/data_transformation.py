@@ -22,7 +22,7 @@ mapping = {
 }
 
 
-target_feature_test_df = target_feature_test_df.map(mapping)
+
 
 class DataTransformation:
     def __init__(self, data_ingestion_artifact: DataIngestionArtifact,
@@ -121,8 +121,7 @@ class DataTransformation:
                 input_feature_test_df = test_df.drop(columns=[TARGET_COLUMN], axis=1)
 
                 target_feature_test_df = test_df[TARGET_COLUMN]
-
-
+                
                 input_feature_test_df['company_age'] = CURRENT_YEAR-input_feature_test_df['yr_of_estab']
 
                 logging.info("Added company_age column to the Test dataset")
