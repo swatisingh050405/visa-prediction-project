@@ -2,6 +2,10 @@ import sys
 import numpy as np
 import mlflow
 import mlflow.sklearn
+import mlflow.xgboost
+from xgboost import XGBClassifier
+import mlflow.catboost
+from catboost import CatBoostClassifier
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import (
     accuracy_score,
@@ -20,6 +24,29 @@ from us_visa.entity.artifact_entity import (
 )
 from us_visa.utils.main_utils import ( load_numpy_array_data, save_object )
 
+from us_visa.mlops.mlflow_config import *
+
+
+def log_model_to_mlflow(tuned_model):
+    # logging.info("Logging model to mlflow")
+   
+    if isinstance(tuned_model, XGBClassifier):
+        mlflow.xgboost.log_model(
+            xgb_model=tuned_model,
+            artifact_path="model"
+        )
+
+    elif isinstance(tuned_model, CatBoostClassifier):
+        mlflow.catboost.log_model(
+            cb_model=tuned_model,
+            artifact_path="model"
+        )
+
+    else:
+        mlflow.sklearn.log_model(
+            sk_model=tuned_model,
+            artifact_path="model"
+        )
 
 
 class ModelTrainer:
@@ -68,72 +95,93 @@ class ModelTrainer:
 
             for model_name, model in models.items():
 
-                with mlflow.start_run(run_name=model_name):
+                # if one model fails, just skip it and try the next model
+                # instead of crashing the whole training process
+                try:
 
-                    logging.info(f"Training {model_name}")
+                    with mlflow.start_run(run_name=model_name):
 
-                    random_search = RandomizedSearchCV(
+                        logging.info(f"Training {model_name}")
 
-                        estimator=model,
+                        random_search = RandomizedSearchCV(
 
-                        param_distributions=params[model_name],
+                            estimator=model,
 
-                        n_iter=5,
+                            param_distributions=params[model_name],
 
-                        cv=3,
+                            n_iter=5,
 
-                        scoring="accuracy",
+                            cv=3,
 
-                        random_state=42,
+                            scoring="accuracy",
 
-                        n_jobs=-1
+                            random_state=42,
 
+                            n_jobs=-1
+
+                        )
+
+                        random_search.fit(x_train, y_train)
+
+                        tuned_model = random_search.best_estimator_
+
+                        mlflow.log_params(random_search.best_params_)
+
+                        # using a tag instead of a param here, so it never
+                        # clashes with a hyperparameter that happens to be
+                        # named "model_name"
+                        mlflow.set_tag("model_name", model_name)
+
+                        y_pred = tuned_model.predict(x_test)
+
+                        accuracy = accuracy_score(y_test, y_pred)
+                        precision = precision_score(y_test, y_pred)
+                        recall = recall_score(y_test, y_pred)
+                        f1 = f1_score(y_test, y_pred)
+
+                        mlflow.log_metrics(
+                            {
+                                "accuracy": accuracy,
+                                "precision": precision,
+                                "recall": recall,
+                                "f1_score": f1
+                            }
+                        )
+                        mlflow.log_metric(
+                            "cv_score",
+                            random_search.best_score_
+                        )
+
+                        log_model_to_mlflow(tuned_model)
+
+                        logging.info(
+                         f"{model_name} Accuracy : {accuracy}"
+             )
+
+                        if accuracy > best_model_score:
+
+                            best_model_score = accuracy
+
+                            best_model = tuned_model
+
+                            best_model_name = model_name
+
+                except Exception as model_error:
+                    # log the error and continue with the next model
+                    logging.info(f"Skipping {model_name} because it failed: {model_error}")
+                    continue
+
+            # if every single model failed above, best_model will still be None
+            # so we stop here instead of crashing on best_model.predict()
+            if best_model is None:
+                raise Exception("No model could be trained successfully")
+
+            if best_model_score < self.model_trainer_config.expected_accuracy:
+                 raise Exception(
+                        f"No best model found with accuracy greater than {self.model_trainer_config.expected_accuracy}"
                     )
-
-                    random_search.fit(x_train, y_train)
-
-                    tuned_model = random_search.best_estimator_
-
-                    mlflow.log_params(random_search.best_params_)
-                    mlflow.log_param("model_name", model_name)
-
-                    y_pred = tuned_model.predict(x_test)
-
-                    
-
-                    accuracy = accuracy_score(y_test, y_pred)
-                    precision = precision_score(y_test, y_pred)
-                    recall = recall_score(y_test, y_pred)
-                    f1 = f1_score(y_test, y_pred)
-
-                    mlflow.log_metric("accuracy", accuracy)
-                    mlflow.log_metric("precision", precision)
-                    mlflow.log_metric("recall", recall)
-                    mlflow.log_metric("f1_score", f1)
-
-                    mlflow.sklearn.log_model(
-                    sk_model=tuned_model,
-                    artifact_path="model"
-                )
-
-                    logging.info(
-                        f"{model_name} Accuracy : {accuracy}"
-                    )
-
-                    if accuracy > best_model_score:
-
-                        best_model_score = accuracy
-
-                        best_model = tuned_model
-
-                        best_model_name = model_name
 
             train_pred = best_model.predict(x_train)
-
-            mlflow.log_metric(
-            "train_accuracy",
-            accuracy_score(y_train, train_pred)
-        )
 
             train_metric_artifact = ClassificationMetricArtifact(
                  accuracy_score=accuracy_score(y_train, train_pred),
@@ -150,11 +198,6 @@ class ModelTrainer:
                 precision_score=precision_score(y_test, test_pred),
                 recall_score=recall_score(y_test, test_pred)
             )
-
-            if best_model_score < self.model_trainer_config.expected_accuracy:
-                 raise Exception(
-                        f"No best model found with accuracy greater than {self.model_trainer_config.expected_accuracy}"
-                    )
 
             logging.info(
                 f"Best model found {best_model_name} with accuracy {best_model_score}"
@@ -174,7 +217,3 @@ class ModelTrainer:
 
         except Exception as e:
             raise USvisaException(e, sys)
-                
-
-
-            

@@ -54,9 +54,13 @@ class ModelEvaluation:
 
             logging.info("Loading newly trained model")
 
-            trained_model = load_object(
-                self.model_trainer_artifact.trained_model_file_path
-            )
+            # if this fails, we know it's the trained model that's the problem
+            try:
+                trained_model = load_object(
+                    self.model_trainer_artifact.trained_model_file_path
+                )
+            except Exception as e:
+                raise Exception(f"Failed to load trained model: {e}")
 
             if not os.path.exists(self.model_eval_config.production_model_file_path
             ):
@@ -69,9 +73,14 @@ class ModelEvaluation:
                 )
             logging.info("Loading production model")
 
-            production_model = load_object(
-                self.model_eval_config.production_model_file_path
-            ) 
+            # if this fails, we know it's the production model that's the problem
+            try:
+                production_model = load_object(
+                    self.model_eval_config.production_model_file_path
+                )
+            except Exception as e:
+                raise Exception(f"Failed to load production model: {e}")
+
             trained_pred = trained_model.predict(x_test)
 
             trained_score = accuracy_score(
@@ -110,5 +119,3 @@ class ModelEvaluation:
 
         except Exception as e:
             raise USvisaException(e, sys)
-
-
