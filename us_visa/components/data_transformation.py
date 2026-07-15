@@ -13,6 +13,7 @@ from us_visa.entity.artifact_entity import DataTransformationArtifact, DataInges
 from us_visa.exception import USvisaException
 from us_visa.logger import logging
 from us_visa.utils.main_utils import save_object, save_numpy_array_data, read_yaml_file, drop_columns
+from us_visa.utils.feature_engineering import perform_feature_engineering
 
 
 
@@ -105,7 +106,7 @@ class DataTransformation:
 
                 logging.info("Got train features and test features of Training dataset")
 
-                input_feature_train_df['company_age'] = CURRENT_YEAR-input_feature_train_df['yr_of_estab']
+               
 
                 logging.info("Added company_age column to the Training dataset")
 
@@ -113,7 +114,12 @@ class DataTransformation:
 
                 logging.info("drop the columns in drop_cols of Training dataset")
 
-                input_feature_train_df = drop_columns(df=input_feature_train_df, cols = drop_cols)
+                input_feature_train_df = perform_feature_engineering(
+                input_feature_train_df,
+                drop_cols
+            )
+
+                
                 
                 target_feature_train_df = target_feature_train_df.map(mapping)
 
@@ -122,11 +128,14 @@ class DataTransformation:
 
                 target_feature_test_df = test_df[TARGET_COLUMN]
                 
-                input_feature_test_df['company_age'] = CURRENT_YEAR-input_feature_test_df['yr_of_estab']
+                
 
                 logging.info("Added company_age column to the Test dataset")
 
-                input_feature_test_df = drop_columns(df=input_feature_test_df, cols = drop_cols)
+                input_feature_test_df = perform_feature_engineering(
+                input_feature_test_df,
+                drop_cols
+            )
 
                 logging.info("drop the columns in drop_cols of Test dataset")
 
