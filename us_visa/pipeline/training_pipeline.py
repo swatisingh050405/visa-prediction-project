@@ -155,7 +155,8 @@ class TrainPipeline:
     def start_model_pusher(
     self,
     model_trainer_artifact: ModelTrainerArtifact,
-    model_evaluation_artifact: ModelEvaluationArtifact
+    model_evaluation_artifact: ModelEvaluationArtifact,
+    data_transformation_artifact: DataTransformationArtifact
 ) -> ModelPusherArtifact:
 
         try:
@@ -163,7 +164,9 @@ class TrainPipeline:
             model_pusher = ModelPusher(
                 model_pusher_config=self.model_pusher_config,
                 model_trainer_artifact=model_trainer_artifact,
-                model_evaluation_artifact=model_evaluation_artifact
+                model_evaluation_artifact=model_evaluation_artifact,
+                 data_transformation_artifact=data_transformation_artifact
+
             )
 
             return model_pusher.initiate_model_pusher()
@@ -215,7 +218,8 @@ class TrainPipeline:
             # Model Pusher
             model_pusher_artifact = self.start_model_pusher(
                 model_trainer_artifact=model_trainer_artifact,
-                model_evaluation_artifact=model_evaluation_artifact
+                model_evaluation_artifact=model_evaluation_artifact,
+                data_transformation_artifact=data_transformation_artifact
             )
 
             logging.info("Model pusher completed successfully")
