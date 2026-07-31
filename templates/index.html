@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visa Approval Prediction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+
+  <!-- Ambient Animated Mesh Background -->
+  <div class="mesh-background">
+    <div class="glow-sphere sphere-1"></div>
+    <div class="glow-sphere sphere-2"></div>
+    <div class="glow-sphere sphere-3"></div>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4"/>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-tag">Form V-100 &middot; AI Intelligence</span>
+          <h1 class="brand-title">Visa Approval Prediction</h1>
+        </div>
+      </div>
+      <div class="system-status">
+        <span class="status-dot"></span> System Ready
+      </div>
+    </header>
+
+    <!-- Top Guidance Banner (Replaces Side Card) -->
+    <div class="notice-banner">
+      <div class="notice-icon">
+        <svg width="20" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+      </div>
+      <p><strong>Get Started:</strong> Please enter your petition & employer details below to predict the visa approval probability in real-time.</p>
+    </div>
+
+    <!-- Main Single Column Flow -->
+    <main class="main-content">
+
+      <!-- Single Column Form Structure -->
+      <form id="visaForm" class="form-flow" novalidate>
+        
+        <!-- Step 1: Beneficiary Profile -->
+        <section class="card-section">
+          <div class="section-title">
+            <span class="step-num">Step 01</span>
+            <div>
+              <h2>Beneficiary Profile</h2>
+              <p>Applicant's education credentials, origin & experience details</p>
+            </div>
+          </div>
+
+          <div class="grid-4">
+            <div class="field">
+              <label for="continent">Continent of Origin</label>
+              <div class="select-box">
+                <select id="continent" name="continent" required>
+                  <option value="Asia">Asia</option>
+                  <option value="Europe">Europe</option>
+                  <option value="Africa">Africa</option>
+                  <option value="North America">North America</option>
+                  <option value="South America">South America</option>
+                  <option value="Oceania">Oceania</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="education">Highest Education</label>
+              <div class="select-box">
+                <select id="education" name="education" required>
+                  <option value="High School">High School</option>
+                  <option value="Bachelor's">Bachelor's</option>
+                  <option value="Master's" selected>Master's</option>
+                  <option value="Doctorate">Doctorate</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Prior Job Experience</label>
+              <div class="toggle-pills">
+                <input type="radio" id="exp-y" name="experience" value="Y" checked>
+                <label for="exp-y">Yes</label>
+                <input type="radio" id="exp-n" name="experience" value="N">
+                <label for="exp-n">No</label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Requires Job Training</label>
+              <div class="toggle-pills">
+                <input type="radio" id="train-n" name="training" value="N" checked>
+                <label for="train-n">No</label>
+                <input type="radio" id="train-y" name="training" value="Y">
+                <label for="train-y">Yes</label>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 2: Sponsoring Employer -->
+        <section class="card-section">
+          <div class="section-title">
+            <span class="step-num">Step 02</span>
+            <div>
+              <h2>Sponsoring Employer & Position</h2>
+              <p>Company headcount, region, full-time status, and wage parameters</p>
+            </div>
+          </div>
+
+          <div class="grid-4">
+            <div class="field">
+              <label for="employees">Company Headcount</label>
+              <input type="number" id="employees" name="employees" min="0" placeholder="e.g. 450" required>
+            </div>
+
+            <div class="field">
+              <label for="year">Year Established</label>
+              <input type="number" id="year" name="year" min="1800" max="2026" placeholder="e.g. 2012" required>
+            </div>
+
+            <div class="field">
+              <label for="region">Employment Region</label>
+              <div class="select-box">
+                <select id="region" name="region" required>
+                  <option value="West">West</option>
+                  <option value="South">South</option>
+                  <option value="Midwest">Midwest</option>
+                  <option value="Northeast">Northeast</option>
+                  <option value="Island">Island</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Full-Time Position</label>
+              <div class="toggle-pills">
+                <input type="radio" id="ft-y" name="fulltime" value="Y" checked>
+                <label for="ft-y">Yes</label>
+                <input type="radio" id="ft-n" name="fulltime" value="N">
+                <label for="ft-n">No</label>
+              </div>
+            </div>
+
+            <div class="field field-span-2">
+              <label for="wage">Prevailing Wage & Frequency</label>
+              <div class="dual-input-box">
+                <span class="currency-tag">$</span>
+                <input type="number" id="wage" name="wage" min="0" step="0.01" placeholder="115,000" required>
+                <div class="select-box inline-select">
+                  <select id="unit" name="unit" required>
+                    <option value="Year">/ Year</option>
+                    <option value="Hour">/ Hour</option>
+                    <option value="Week">/ Week</option>
+                    <option value="Month">/ Month</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-submit-row">
+            <button type="submit" id="submitBtn" class="action-btn">
+              <span class="btn-text">Predict Visa Approval</span>
+              <span class="btn-spinner"></span>
+            </button>
+          </div>
+        </section>
+
+      </form>
+
+      <!-- Bottom Full-Width Output Display -->
+      <section id="result" class="output-section" hidden aria-live="polite"></section>
+
+    </main>
+  </div>
+
+  <script src="static/script.js"></script>
+</body>
+</html>
