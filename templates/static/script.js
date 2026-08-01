@@ -5,6 +5,10 @@ const resultEl = document.getElementById("result");
 form.addEventListener("submit", async function (e) {
   e.preventDefault();
 
+  if (!validateForm()) {
+    return;
+  }
+
   const getRadioVal = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value;
 
   const data = {
@@ -53,73 +57,105 @@ function setLoading(isLoading) {
 
 function renderResult(result) {
   const approved = result.prediction === "Visa Approved";
-  const approvedPct = round1(result.probabilities?.approved ?? result.confidence);
-  const rejectedPct = round1(result.probabilities?.rejected ?? (100 - approvedPct));
+
+  const approvedPct = round1(result.probabilities.approved);
+  const rejectedPct = round1(result.probabilities.rejected);
   const confidence = round1(result.confidence);
 
   const statusClass = approved ? "approved" : "denied";
   const statusText = approved ? "Approved" : "Denied";
-  const ringColor = approved ? "#10b981" : "#f43f5e";
+  const ringColor = approved ? "#10b981" : "#ef4444";
 
-  const factorsHtml = (result.top_features || []).map(renderFactorCard).join("");
+  const factors = result.top_features || [];
+
+  // Robust Insight Generator
+  const insights = generateInsightsAndRecommendations(factors);
+
+  const factorsHtml = factors.length
+    ? factors.map(renderFactorCard).join("")
+    : `<div class="no-factors">Feature contribution data is unavailable for this prediction.</div>`;
 
   resultEl.hidden = false;
   resultEl.classList.remove("is-error");
 
-  // NOTE: every data visual below starts at its zero state (dasharray "0,100",
-  // width 0%). The CSS already defines transitions for these properties, but a
-  // transition only plays on a *change* — setting the final value directly in
-  // this innerHTML write was why the ring/bars used to just snap into place.
   resultEl.innerHTML = `
-    <!-- Result Header Banner -->
+    <!-- Main Outcome Display -->
     <div class="outcome-banner ${statusClass}">
       <div>
-        <span class="outcome-tag">Prediction Assessment Result</span>
+        <span class="outcome-tag">AI Assessment Result</span>
         <h2 class="outcome-title">${escapeHtml(result.prediction)}</h2>
+        <p class="outcome-subtitle">Confidence ${confidence}% • Generated using trained ML model</p>
       </div>
       <span class="outcome-badge ${statusClass}">${statusText}</span>
     </div>
 
-    <!-- Gauge & Metrics Grid -->
+    <!-- Probability & Metric Visualizations -->
     <div class="metrics-row">
-      <!-- Circular Ring Chart -->
       <div class="confidence-ring-card">
-        <strong style="font-size:0.85rem; color:var(--text-primary);">Confidence Rating</strong>
+        <span class="metric-heading">Overall Confidence</span>
         <div class="circle-chart">
           <svg width="120" height="120" viewBox="0 0 36 36">
             <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-            <path class="circle-fill" data-target="${confidence}, 100" stroke="${ringColor}" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+            <path class="circle-fill" stroke="${ringColor}" data-target="${confidence},100" stroke-dasharray="0,100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
           </svg>
-          <div class="circle-text">${confidence}%</div>
+          <div class="circle-text"><strong>${confidence}%</strong></div>
         </div>
-        <span style="font-size:0.75rem; color:var(--text-muted);">Model Certainty</span>
       </div>
 
-      <!-- Probability Distribution Bar -->
       <div class="distribution-card">
         <div class="distribution-header">
-          <span>Probability Breakdown</span>
-          <span>100% Total Scale</span>
+          <span>Prediction Probability</span>
+          <span>Total = 100%</span>
         </div>
         <div class="split-progress-bar">
-          <div class="seg-approved" data-target="${approvedPct}%" style="width:0%"></div>
-          <div class="seg-rejected" data-target="${rejectedPct}%" style="width:0%"></div>
+          <div class="seg-approved" style="width:0%" data-target="${approvedPct}%"></div>
+          <div class="seg-rejected" style="width:0%" data-target="${rejectedPct}%"></div>
         </div>
         <div class="legend-row">
-          <span class="legend-approved">&#9679; Approval Probability: ${approvedPct}%</span>
-          <span class="legend-denied">&#9679; Denial Probability: ${rejectedPct}%</span>
+          <span class="legend-approved">● Approval ${approvedPct}%</span>
+          <span class="legend-denied">● Rejection ${rejectedPct}%</span>
         </div>
       </div>
     </div>
 
-    <!-- Key Decision Influencers Grid -->
-    ${factorsHtml ? `
-    <div class="factors-section">
-      <h3 class="factors-title">Key Decision Influencers (Feature Contribution)</h3>
-      <div class="factors-grid">
-        ${factorsHtml}
+    <!-- AI Natural Language Reasoning & Recommendations Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem; margin-top: 1rem;">
+      
+      <!-- Key Factors Card -->
+      <div style="background: ${approved ? 'rgba(236,253,245,0.8)' : 'rgba(254,242,242,0.8)'}; border: 1px solid ${approved ? '#a7f3d0' : '#fecdd3'}; border-radius: 16px; padding: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.85rem; color: ${approved ? '#047857' : '#b91c1c'}; font-weight: 800; font-size: 0.95rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>${approved ? 'Key Factors Supporting Approval' : 'Primary Risk & Rejection Drivers'}</span>
+        </div>
+        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.875rem; color: #0f172a;">
+          ${insights.reasons.map(reason => `<li style="position: relative; padding-left: 1.25rem;">• ${reason}</li>`).join('')}
+        </ul>
       </div>
-    </div>` : ""}
+
+      <!-- Actionable Steps Card -->
+      <div style="background: rgba(238,242,255,0.8); border: 1px solid #c7d2fe; border-radius: 16px; padding: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.85rem; color: #4338ca; font-weight: 800; font-size: 0.95rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+          <span>Actionable Steps for Improvement</span>
+        </div>
+        <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.875rem; color: #0f172a;">
+          ${insights.recommendations.map(rec => `<li style="background: rgba(255,255,255,0.7); padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid rgba(199,210,254,0.5);">💡 ${rec}</li>`).join('')}
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- SHAP Weight Breakdown Section -->
+    <div class="factors-section" style="margin-top: 1rem;">
+      <h3 class="factors-title">Top Factors Influencing This Decision</h3>
+      <div class="factors-grid">${factorsHtml}</div>
+    </div>
   `;
 
   animateInResultVisuals(resultEl);
@@ -128,36 +164,92 @@ function renderResult(result) {
 
 function renderFactorCard(factor) {
   const impact = Number(factor.impact) || 0;
-  const isPos = impact >= 0;
-  const magnitude = Math.min(Math.abs(impact), 1) * 100;
+  const positive = impact > 0;
+  const percentage = Math.min(Math.abs(impact) / 3 * 100, 100);
+  const featureName = prettifyFeatureName(factor.feature);
+  const direction = positive ? "Supports Approval" : "Supports Denial";
+
+  // Dynamic background & border based on impact direction
+  const cardBg = positive ? "rgba(236, 253, 245, 0.75)" : "rgba(254, 242, 242, 0.75)";
+  const cardBorder = positive ? "#a7f3d0" : "#fecdd3";
 
   return `
-    <div class="factor-card">
+    <div class="factor-card ${positive ? 'factor-pos' : 'factor-neg'}" 
+         style="background: ${cardBg}; border: 1.5px solid ${cardBorder}; border-radius: var(--radius-md); padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; transition: transform 0.2s ease, box-shadow 0.2s ease;">
       <div class="factor-top">
-        <span class="factor-feature-name" title="${escapeHtml(factor.feature)}">${escapeHtml(factor.feature)}</span>
-        <span class="factor-score-pill ${isPos ? "pos" : "neg"}">
+        <div>
+          <div class="factor-feature-name" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+            ${featureName}
+          </div>
+          <div class="factor-direction ${positive ? "pos" : "neg"}">
+            ${direction}
+          </div>
+        </div>
+        <span class="factor-score-pill ${positive ? "pos" : "neg"}">
           ${impact > 0 ? "+" : ""}${impact.toFixed(2)}
         </span>
       </div>
       <div class="factor-bar-track">
-        <div class="factor-bar-inner ${isPos ? "pos" : "neg"}" data-target="${magnitude}%" style="width:0%"></div>
+        <div class="factor-bar-inner ${positive ? "pos" : "neg"}" data-target="${percentage}%" style="width:0%"></div>
       </div>
     </div>
   `;
 }
 
-// Elements are rendered at their zero state with the real value stashed in
-// data-target. Reading it back one frame later gives the browser a genuine
-// from -> to change to animate, instead of appearing instantly.
+// FULLY DYNAMIC FEATURE IMPACT PARSER
+function generateInsightsAndRecommendations(factors) {
+  const reasons = [];
+  const recommendations = [];
+
+  factors.forEach(f => {
+    const rawName = String(f.feature || "").toLowerCase();
+    const impact = Number(f.impact) || 0;
+    const readableName = prettifyFeatureName(f.feature);
+
+    if (impact < 0) {
+      // Negative impacts -> Actionable Recommendations & Risk Points
+      if (rawName.includes("wage") || rawName.includes("salary")) {
+        recommendations.push("<strong>Wage Adjustment:</strong> Raise base salary offer closer to regional industry standards.");
+      } else if (rawName.includes("edu")) {
+        recommendations.push("<strong>Education Proof:</strong> Include documentation for advanced degrees or technical credentials.");
+      } else if (rawName.includes("exp") || rawName.includes("work")) {
+        recommendations.push("<strong>Experience Verification:</strong> Attach official past employment verification letters or lead portfolios.");
+      } else if (rawName.includes("age") || rawName.includes("estab")) {
+        recommendations.push("<strong>Sponsor Documentation:</strong> Submit corporate financial tax statements or audit reports.");
+      } else {
+        recommendations.push(`<strong>${readableName}:</strong> Review provided details for compliance and updates.`);
+      }
+    } else if (impact > 0) {
+      // Positive impacts -> Highlight in Supporting Approval Card
+      if (rawName.includes("location") || rawName.includes("region")) {
+        reasons.push("Selected employment region strongly supports local labor demand metrics.");
+      } else if (rawName.includes("size") || rawName.includes("employee")) {
+        reasons.push("Employer workforce scale provides high organizational stability confidence.");
+      } else {
+        reasons.push(`${readableName} acts as a strong positive driver for approval.`);
+      }
+    }
+  });
+
+  if (reasons.length === 0) {
+    reasons.push("Petition parameters align within acceptable standard evaluation thresholds.");
+  }
+  if (recommendations.length === 0) {
+    recommendations.push("<strong>Application Review:</strong> Double-check all official sponsorship filing forms for accuracy.");
+  }
+
+  return { reasons, recommendations };
+}
+
 function animateInResultVisuals(root) {
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const ring = root.querySelector(".circle-fill");
-      if (ring) ring.setAttribute("stroke-dasharray", ring.dataset.target);
+    const ring = root.querySelector(".circle-fill");
+    if (ring) {
+      ring.setAttribute("stroke-dasharray", ring.dataset.target);
+    }
 
-      root.querySelectorAll(".seg-approved, .seg-rejected, .factor-bar-inner").forEach((el) => {
-        el.style.width = el.dataset.target;
-      });
+    root.querySelectorAll(".seg-approved,.seg-rejected,.factor-bar-inner").forEach(el => {
+      el.style.width = el.dataset.target;
     });
   });
 }
@@ -189,4 +281,92 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = String(str);
   return div.innerHTML;
+}
+
+function validateForm() {
+  const fields = [
+    { element: document.getElementById("employees"), message: "Please enter company headcount." },
+    { element: document.getElementById("year"), message: "Please enter establishment year." },
+    { element: document.getElementById("wage"), message: "Please enter prevailing wage." }
+  ];
+
+  for (const item of fields) {
+    item.element.classList.remove("input-error");
+
+    if (item.element.value.trim() === "") {
+      item.element.classList.add("input-error");
+      item.element.focus();
+      showToast(item.message);
+      return false;
+    }
+  }
+
+  const year = Number(document.getElementById("year").value);
+  if (year < 1800 || year > new Date().getFullYear()) {
+    document.getElementById("year").classList.add("input-error");
+    showToast("Please enter a valid establishment year.");
+    document.getElementById("year").focus();
+    return false;
+  }
+
+  const wage = Number(document.getElementById("wage").value);
+  if (wage <= 0) {
+    document.getElementById("wage").classList.add("input-error");
+    showToast("Prevailing wage must be greater than zero.");
+    document.getElementById("wage").focus();
+    return false;
+  }
+
+  return true;
+}
+
+function showToast(message) {
+  let toast = document.querySelector(".toast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "toast";
+    document.body.appendChild(toast);
+  }
+
+  toast.textContent = message;
+  toast.classList.add("show");
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 2500);
+}
+
+document.querySelectorAll("input,select").forEach(el => {
+  el.addEventListener("input", () => el.classList.remove("input-error"));
+  el.addEventListener("change", () => el.classList.remove("input-error"));
+});
+
+function prettifyFeatureName(name) {
+  if (!name) return "";
+  name = name
+    .replace(/^Transformer__/, "")
+    .replace(/^StandardScaler__/, "")
+    .replace(/^Ordinal_Encoder__/, "")
+    .replace(/^OrdinalEncoder__/, "");
+
+  const mapping = {
+    company_age: "Company Age",
+    employer_age: "Employer Age",
+    no_of_employees: "Company Size",
+    employer_size: "Employer Size",
+    prevailing_wage: "Prevailing Wage",
+    education_of_employee: "Education Level",
+    education_level: "Education Level",
+    continent: "Applicant Origin",
+    region_of_employment: "Employment Region",
+    job_location: "Job Location",
+    unit_of_wage: "Salary Frequency",
+    has_job_experience: "Prior Work Experience",
+    previous_work_experience: "Previous Work Experience",
+    requires_job_training: "Job Training Required",
+    full_time_position: "Full-Time Position"
+  };
+
+  return mapping[name] || name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
 }

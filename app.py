@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse
 
 from us_visa.exception import USvisaException
 from us_visa.pipeline.prediction_pipeline import (
@@ -7,10 +10,6 @@ from us_visa.pipeline.prediction_pipeline import (
     USvisaData
 )
 from us_visa.entity.prediction_schema import VisaRequest
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse
-
 
 
 app = FastAPI(
@@ -23,7 +22,6 @@ app.mount("/static", StaticFiles(directory="templates/static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
-
     return templates.TemplateResponse(
         request=request,
         name="index.html"
@@ -34,7 +32,6 @@ def home(request: Request):
 
 @app.exception_handler(USvisaException)
 async def usvisa_exception_handler(request: Request, exc: USvisaException):
-
     return JSONResponse(
         status_code=500,
         content={
@@ -42,13 +39,10 @@ async def usvisa_exception_handler(request: Request, exc: USvisaException):
             "message": str(exc)
         }
     )
-
-
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-
     return JSONResponse(
         status_code=500,
         content={
@@ -56,25 +50,20 @@ async def global_exception_handler(request: Request, exc: Exception):
             "message": str(exc)
         }
     )
-
 
 
 # Health Check
 @app.get("/health")
 def health():
-
     try:
         PredictionPipeline()
-
         return {
             "status": "healthy",
             "model_loaded": True,
             "preprocessor_loaded": True,
             "api_version": "1.0.0"
         }
-
     except Exception as e:
-
         return JSONResponse(
             status_code=500,
             content={
@@ -87,8 +76,6 @@ def health():
 
 
 # Prediction
-
-
 @app.post("/predict")
 def predict(data: VisaRequest):
 
@@ -111,16 +98,15 @@ def predict(data: VisaRequest):
 
     prediction, probability, feature_impacts = pipeline.predict(dataframe)
 
-    approved_probability = float(round(float(probability[0][0]) * 100, 2))
-    rejected_probability = float(round(float(probability[0][1]) * 100, 2))
+    # Scikit-learn Index Mapping: Class 0 = Denied, Class 1 = Certified
+    rejected_probability = float(round(float(probability[0][0]) * 100, 2))
+    approved_probability = float(round(float(probability[0][1]) * 100, 2))
 
-    result = "Visa Approved" if prediction[0] == 0 else "Visa Rejected"
+    # Prediction [1] = Certified/Approved, Prediction [0] = Denied/Rejected
+    is_approved = int(prediction[0]) == 1
+    result = "Visa Approved" if is_approved else "Visa Rejected"
 
-    confidence = (
-        approved_probability
-        if prediction[0] == 0
-        else rejected_probability
-    )
+    confidence = approved_probability if is_approved else rejected_probability
 
     return {
         "status": "success",
@@ -130,6 +116,5 @@ def predict(data: VisaRequest):
             "approved": approved_probability,
             "rejected": rejected_probability
         },
-
         "top_features": feature_impacts
     }

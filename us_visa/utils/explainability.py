@@ -18,37 +18,43 @@ class ShapExplainer:
 
         feature_names = self.preprocessor.get_feature_names_out()
 
-        explanations = []
+        # -------- Combine duplicate features --------
+        combined = {}
 
         for feature, impact in zip(feature_names, shap_values[0]):
 
-            explanations.append(
-                {
-                    "feature": self.clean_feature_name(feature),
-                    "impact": float(impact)
-                }
-            )
+            clean_name = self.clean_feature_name(feature)
+
+            if clean_name not in combined:
+                combined[clean_name] = 0.0
+
+            combined[clean_name] += float(impact)
+
+        explanations = [
+            {
+                "feature": feature,
+                "impact": impact
+            }
+            for feature, impact in combined.items()
+        ]
 
         explanations.sort(
             key=lambda x: abs(x["impact"]),
             reverse=True
         )
-
-        # Remove duplicate feature names
-        unique = {}
-
-        for item in explanations:
-
-            if item["feature"] not in unique:
-                unique[item["feature"]] = item
-
-        explanations = list(unique.values())
+        print("Feature Names:")
+        for feature, impact in combined.items():
+             print(feature, ":", impact)
 
         return explanations[:5]
-
     def clean_feature_name(self, feature_name):
 
-        feature_name = feature_name.split("__")[-1]
+        feature_name = feature_name.replace("Transformer__", "")
+        feature_name = feature_name.replace("StandardScaler__", "")
+        feature_name = feature_name.replace("OrdinalEncoder__", "")
+        feature_name = feature_name.replace("Ordinal_Encoder__", "")
+        feature_name = feature_name.replace("OneHotEncoder__", "")
+        feature_name = feature_name.replace("OneHot__", "")
 
         if feature_name.startswith("continent_"):
             return "Continent"

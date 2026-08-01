@@ -1,80 +1,55 @@
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import (
-    RandomForestClassifier,
-    GradientBoostingClassifier,
-    AdaBoostClassifier
-)
-
 from xgboost import XGBClassifier
 from catboost import CatBoostClassifier
-
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 
 def get_models_and_params():
-
     models = {
-
-        "Logistic Regression": LogisticRegression(),
-
-        "Decision Tree": DecisionTreeClassifier(),
-
-        "Random Forest": RandomForestClassifier(),
-
-        "Gradient Boosting": GradientBoostingClassifier(),
-
-        "AdaBoost": AdaBoostClassifier(),
-
         "XGBoost": XGBClassifier(
-            eval_metric="logloss"
+            random_state=42, 
+            eval_metric="logloss", 
+            scale_pos_weight=1.5  # Certified vs Denied ratio imbalance handler
         ),
-
         "CatBoost": CatBoostClassifier(
-            verbose=False,
-             
-            allow_writing_files=False
+            random_state=42, 
+            verbose=0, 
+            allow_writing_files=False, 
+            auto_class_weights="Balanced"  # Automatic inverse class weighting
+        ),
+        "Random Forest": RandomForestClassifier(
+            random_state=42, 
+            class_weight="balanced"  # Automatic inverse class frequency weighting
+        ),
+        "Gradient Boosting": GradientBoostingClassifier(
+            random_state=42
         )
-
     }
 
     params = {
-
-        "Logistic Regression": {
-            "C": [0.01, 0.1, 1, 10]
-        },
-
-        "Decision Tree": {
-            "max_depth": [5, 10, 20],
-            "min_samples_split": [2, 5, 10]
-        },
-
-        "Random Forest": {
-            "n_estimators": [100, 200],
-            "max_depth": [10, 20],
-            "min_samples_split": [2, 5]
-        },
-
-        "Gradient Boosting": {
-            "learning_rate": [0.01, 0.1],
-            "n_estimators": [100, 200]
-        },
-
-        "AdaBoost": {
-            "learning_rate": [0.01, 0.1, 1],
-            "n_estimators": [50, 100]
-        },
-
         "XGBoost": {
-            "learning_rate": [0.01, 0.1],
-            "max_depth": [3, 5],
-            "n_estimators": [100, 200]
+            "n_estimators": [100, 200, 300, 500],
+            "max_depth": [3, 5, 7, 9],
+            "learning_rate": [0.01, 0.03, 0.05, 0.1, 0.2],
+            "subsample": [0.6, 0.8, 1.0],
+            "colsample_bytree": [0.6, 0.8, 1.0]
         },
-
         "CatBoost": {
-            "depth": [4, 6, 8],
-            "learning_rate": [0.01, 0.1],
-            "iterations": [100, 200]
+            "iterations": [200, 400, 600],
+            "depth": [4, 6, 8, 10],
+            "learning_rate": [0.01, 0.03, 0.05, 0.1],
+            "l2_leaf_reg": [1, 3, 5, 7, 9]
+        },
+        "Random Forest": {
+            "n_estimators": [100, 200, 300, 500],
+            "max_depth": [10, 20, 30, None],
+            "min_samples_split": [2, 5, 10],
+            "min_samples_leaf": [1, 2, 4]
+        },
+        "Gradient Boosting": {
+            "n_estimators": [100, 200, 300],
+            "learning_rate": [0.01, 0.05, 0.1],
+            "max_depth": [3, 5, 7],
+            "subsample": [0.7, 0.8, 1.0]
         }
-
     }
 
     return models, params

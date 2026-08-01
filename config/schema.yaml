@@ -37,6 +37,9 @@ num_features:
   - no_of_employees
   - prevailing_wage
   - company_age
+  - wage_to_region_ratio
+  - wage_to_edu_ratio
+  - log_no_of_employees
 
 or_columns:
   - has_job_experience
